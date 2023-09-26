@@ -15,6 +15,6 @@ build:
   system_packages:
     - "unzip"
     - ffmpeg
-    - libsm6 
+    - libsm6
     - libxext6
 predict: "predict.py:Predictor"

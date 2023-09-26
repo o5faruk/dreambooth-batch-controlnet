@@ -191,6 +191,7 @@ class Predictor(BasePredictor):
                     pose_image = load_image(pose_image)
                     pose_nd_array = np.array(pose_image)
                     kwargs['image'] = self.openpose(pose_nd_array)
+                    pipeline = self.cnet_txt2img_pose_pipe
                 elif image is not None:
                     kwargs['image'] = load_image(image)
                     kwargs['strength'] = float(inputs.get('strength', DEFAULT_STRENGTH))

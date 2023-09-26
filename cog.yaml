@@ -11,6 +11,9 @@ build:
     - "accelerate==0.20.3"
   system_packages:
     - "unzip"
+    - ffmpeg
+    - libsm6 
+    - libxext6
   run:
     - "pip install git+https://github.com/patrickvonplaten/controlnet_aux.git@dfb604120af6e5acf21936f79aecb046d0faaa29"
 predict: "predict.py:Predictor"

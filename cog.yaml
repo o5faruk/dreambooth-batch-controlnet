@@ -11,6 +11,7 @@ build:
     - "transformers==4.30.2"
     - "accelerate==0.20.3"
     - "timm==0.6.12"
+    - "opencv-contrib-python==4.6.0.66"
   system_packages:
     - "unzip"
     - ffmpeg

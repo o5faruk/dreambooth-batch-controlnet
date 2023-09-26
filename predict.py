@@ -30,6 +30,8 @@ import shutil
 import subprocess
 from diffusers.utils import load_image
 from controlnet_aux import OpenposeDetector
+import numpy as np
+
 
 SAFETY_MODEL_CACHE = "diffusers-cache"
 SAFETY_MODEL_ID = "CompVis/stable-diffusion-safety-checker"
@@ -187,8 +189,8 @@ class Predictor(BasePredictor):
                 pose_image = inputs.get("pose_image")
                 if pose_image is not None:
                     pose_image = load_image(pose_image)
-                    kwargs['image'] = self.openpose(pose_image)
-                    pipeline = self.cnet_txt2img_pose_pipe
+                    pose_nd_array = np.array(pose_image)
+                    kwargs['image'] = self.openpose(pose_nd_array)
                 elif image is not None:
                     kwargs['image'] = load_image(image)
                     kwargs['strength'] = float(inputs.get('strength', DEFAULT_STRENGTH))

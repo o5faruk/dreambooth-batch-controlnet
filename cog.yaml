@@ -9,7 +9,14 @@ build:
     - "scipy==1.10.1"
     - "transformers==4.30.2"
     - "accelerate==0.20.3"
+    - "opencv-contrib-python==4.6.0.66"
+    - "torchvision==0.15.1"
+    - "timm==0.6.12"
   system_packages:
     - "unzip"
-
+    - ffmpeg
+    - libsm6 
+    - libxext6
+  run:
+    - "pip install git+https://github.com/patrickvonplaten/controlnet_aux.git@dfb604120af6e5acf21936f79aecb046d0faaa29"
 predict: "predict.py:Predictor"

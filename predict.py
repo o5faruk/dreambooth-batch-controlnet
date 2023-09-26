@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 import time
 import os
 from typing import List
@@ -7,8 +8,10 @@ from tqdm.auto import tqdm
 import torch
 from cog import BasePredictor, Input, Path
 from diffusers import (
+    ControlNetModel,
     StableDiffusionPipeline,
     StableDiffusionImg2ImgPipeline,
+    StableDiffusionControlNetPipeline,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
     EulerAncestralDiscreteScheduler,
@@ -26,6 +29,7 @@ from transformers import CLIPFeatureExtractor
 import shutil
 import subprocess
 from diffusers.utils import load_image
+from controlnet_aux import OpenposeDetector
 
 SAFETY_MODEL_CACHE = "diffusers-cache"
 SAFETY_MODEL_ID = "CompVis/stable-diffusion-safety-checker"
@@ -120,6 +124,7 @@ class Predictor(BasePredictor):
             torch_dtype=torch.float16,
         ).to("cuda")
 
+        print("Loading SD img2img pipeline...")
         self.img2img_pipe = StableDiffusionImg2ImgPipeline(
             vae=self.txt2img_pipe.vae,
             text_encoder=self.txt2img_pipe.text_encoder,
@@ -129,10 +134,38 @@ class Predictor(BasePredictor):
             safety_checker=self.txt2img_pipe.safety_checker,
             feature_extractor=self.txt2img_pipe.feature_extractor,
         ).to("cuda")
+
+        print("Loading pose...")
+        self.openpose = OpenposeDetector.from_pretrained(
+            "lllyasviel/ControlNet",
+            cache_dir="diffusers-cache",
+        )
+
+        print("Loading controlnet...")
+        controlnet = ControlNetModel.from_pretrained(
+            "lllyasviel/sd-controlnet-openpose",
+            torch_dtype=torch.float16,
+            cache_dir="diffusers-cache",
+            local_files_only=True,
+        )
+
+        print("Loading controlnet txt2img...")
+        self.cnet_txt2img_pose_pipe = StableDiffusionControlNetPipeline(
+            vae=self.txt2img_pipe.vae,
+            text_encoder=self.txt2img_pipe.text_encoder,
+            tokenizer=self.txt2img_pipe.tokenizer,
+            unet=self.txt2img_pipe.unet,
+            scheduler=self.txt2img_pipe.scheduler,
+            safety_checker=self.txt2img_pipe.safety_checker,
+            feature_extractor=self.txt2img_pipe.feature_extractor,
+            controlnet=controlnet,
+        ).to("cuda")
+
         print("Loaded pipelines in {:.2f} seconds".format(time.time() - start_time))
 
         self.txt2img_pipe.set_progress_bar_config(disable=True)
         self.img2img_pipe.set_progress_bar_config(disable=True)
+        self.cnet_txt2img_pose_pipe.set_progress_bar_config(disable=True)
         self.url = url
 
     def generate_images(self, images, output_dir):
@@ -151,7 +184,12 @@ class Predictor(BasePredictor):
                 }
 
                 image = inputs.get("image")
-                if image is not None:
+                pose_image = inputs.get("pose_image")
+                if pose_image is not None:
+                    pose_image = load_image(pose_image)
+                    kwargs['image'] = self.openpose(pose_image)
+                    pipeline = self.cnet_txt2img_pose_pipe
+                elif image is not None:
                     kwargs['image'] = load_image(image)
                     kwargs['strength'] = float(inputs.get('strength', DEFAULT_STRENGTH))
                     pipeline = self.img2img_pipe

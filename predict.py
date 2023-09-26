@@ -71,7 +71,7 @@ class Predictor(BasePredictor):
             SAFETY_MODEL_ID,
             cache_dir=SAFETY_MODEL_CACHE,
             torch_dtype=torch.float16,
-            local_files_only=True,
+            local_files_only=False,
         ).to("cuda")
         self.feature_extractor = CLIPFeatureExtractor.from_pretrained(
             "openai/clip-vit-base-patch32", cache_dir=SAFETY_MODEL_CACHE
@@ -146,7 +146,7 @@ class Predictor(BasePredictor):
             "lllyasviel/sd-controlnet-openpose",
             torch_dtype=torch.float16,
             cache_dir="diffusers-cache",
-            local_files_only=True,
+            local_files_only=False,
         )
 
         print("Loading controlnet txt2img...")

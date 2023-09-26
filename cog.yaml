@@ -12,6 +12,7 @@ build:
     - "accelerate==0.20.3"
     - "timm==0.6.12"
     - "controlnet-aux==0.0.6"
+    - "matplotlib"
   system_packages:
     - "unzip"
     - ffmpeg

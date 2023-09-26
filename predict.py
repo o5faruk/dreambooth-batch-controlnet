@@ -187,7 +187,7 @@ class Predictor(BasePredictor):
                 pose_image = inputs.get("pose_image")
                 if pose_image is not None:
                     pose_image = load_image(pose_image)
-                    kwargs['image'] = self.openpose(pose_image, hand_and_face=True)
+                    kwargs['image'] = self.openpose(pose_image)
                     pipeline = self.cnet_txt2img_pose_pipe
                 elif image is not None:
                     kwargs['image'] = load_image(image)

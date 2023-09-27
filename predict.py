@@ -215,13 +215,14 @@ class Predictor(BasePredictor):
                 image = inputs.get("image")
                 pose_image = inputs.get("pose_image")
                 if image is not None and pose_image is not None:
+                    print("USING controlnet_img2img_pose_pipe")
                     pose_image = load_image(pose_image)
                     pose_nd_array = np.array(pose_image)
                     kwargs["controlnet_conditioning_image"] = self.openpose(pose_nd_array)
                     kwargs["image"] = load_image(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     pipeline = self.cnet_img2img_pose_pipe
-                if pose_image is not None:
+                elif pose_image is not None:
                     print("GETTING POSE")
                     pose_image = load_image(pose_image)
                     pose_nd_array = np.array(pose_image)

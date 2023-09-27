@@ -54,6 +54,13 @@ class KerrasDPM:
         return DPMSolverMultistepScheduler.from_config(config, use_karras_sigmas=True)
 
 
+class DPMPPSDEKarras:
+    def from_config(config):
+        return DPMSolverMultistepScheduler.from_config(
+            config, use_karras_sigmas=True, algorithm_type="dpmsolver++"
+        )
+
+
 SCHEDULERS = {
     "DDIM": DDIMScheduler,
     "DPMSolverMultistep": DPMSolverMultistepScheduler,
@@ -64,6 +71,7 @@ SCHEDULERS = {
     "KLMS": LMSDiscreteScheduler,
     "PNDM": PNDMScheduler,
     "UniPCMultistep": UniPCMultistepScheduler,
+    "DPM++SDEKarras": DPMPPSDEKarras,
 }
 
 
@@ -80,7 +88,6 @@ class Predictor(BasePredictor):
         )
         self.url = None
 
-
     def download_tar_weights(self, url):
         """Download the model weights from the given URL"""
         print("Downloading weights...")
@@ -88,12 +95,14 @@ class Predictor(BasePredictor):
         if os.path.exists("weights"):
             shutil.rmtree("weights")
         os.makedirs("weights")
-        subprocess.check_output(["script/get_weights.sh", url], stderr=subprocess.STDOUT)
+        subprocess.check_output(
+            ["script/get_weights.sh", url], stderr=subprocess.STDOUT
+        )
 
     def download_zip_weights_python(self, url):
         """Download the model weights from the given URL"""
         print("Downloading weights...")
-   
+
         if os.path.exists("weights"):
             shutil.rmtree("weights")
         os.makedirs("weights")
@@ -181,20 +190,26 @@ class Predictor(BasePredictor):
 
                 kwargs = {
                     "prompt": [inputs["prompt"]] * num_outputs,
-                    "num_inference_steps": int(inputs.get("num_inference_steps", DEFAULT_NUM_INFERENCE_STEPS)),
-                    "guidance_scale": float(inputs.get("guidance_scale", DEFAULT_GUIDANCE_SCALE)),
+                    "num_inference_steps": int(
+                        inputs.get("num_inference_steps", DEFAULT_NUM_INFERENCE_STEPS)
+                    ),
+                    "guidance_scale": float(
+                        inputs.get("guidance_scale", DEFAULT_GUIDANCE_SCALE)
+                    ),
                 }
-
+                print("GETTING IMAGES")
                 image = inputs.get("image")
                 pose_image = inputs.get("pose_image")
                 if pose_image is not None:
+                    print("GETTING POSE")
                     pose_image = load_image(pose_image)
                     pose_nd_array = np.array(pose_image)
-                    kwargs['image'] = self.openpose(pose_nd_array)
+                    kwargs["image"] = self.openpose(pose_nd_array)
                     pipeline = self.cnet_txt2img_pose_pipe
+                    print("DONE GETTING POSE")
                 elif image is not None:
-                    kwargs['image'] = load_image(image)
-                    kwargs['strength'] = float(inputs.get('strength', DEFAULT_STRENGTH))
+                    kwargs["image"] = load_image(image)
+                    kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     pipeline = self.img2img_pipe
                 else:
                     pipeline = self.txt2img_pipe
@@ -206,7 +221,9 @@ class Predictor(BasePredictor):
                     kwargs["negative_prompt"] = [negative_prompt] * num_outputs
 
                 scheduler = inputs.get("scheduler", DEFAULT_SCHEDULER)
-                pipeline.scheduler = SCHEDULERS[scheduler].from_config(pipeline.scheduler.config)
+                pipeline.scheduler = SCHEDULERS[scheduler].from_config(
+                    pipeline.scheduler.config
+                )
 
                 if bool(inputs.get("disable_safety_check", False)):
                     pipeline.safety_checker = None
@@ -226,7 +243,6 @@ class Predictor(BasePredictor):
                         continue
                     image.save(os.path.join(output_dir, f"{name}-{i}.png"))
 
-
     @torch.inference_mode()
     def predict(
         self,
@@ -239,10 +255,13 @@ class Predictor(BasePredictor):
     ) -> List[Path]:
         """Run a single prediction on the model"""
 
-        weights = weights.replace("https://replicate.delivery/pbxt/", "https://storage.googleapis.com/replicate-files/")
+        weights = weights.replace(
+            "https://replicate.delivery/pbxt/",
+            "https://storage.googleapis.com/replicate-files/",
+        )
 
         images_json = json.loads(images)
-    
+
         if weights is None:
             raise ValueError("No weights provided")
         self.load_weights(weights)

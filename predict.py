@@ -31,6 +31,8 @@ import subprocess
 from diffusers.utils import load_image
 from controlnet_aux import OpenposeDetector
 import numpy as np
+from stable_diffusion_controlnet_img2img import StableDiffusionControlNetImg2ImgPipeline
+
 
 
 SAFETY_MODEL_CACHE = "diffusers-cache"
@@ -172,6 +174,18 @@ class Predictor(BasePredictor):
             controlnet=controlnet,
         ).to("cuda")
 
+        print("Loading controlnet img2img...")
+        self.cnet_img2img_pose_pipe = StableDiffusionControlNetImg2ImgPipeline(
+            vae=self.txt2img_pipe.vae,
+            text_encoder=self.txt2img_pipe.text_encoder,
+            tokenizer=self.txt2img_pipe.tokenizer,
+            unet=self.txt2img_pipe.unet,
+            scheduler=self.txt2img_pipe.scheduler,
+            safety_checker=self.txt2img_pipe.safety_checker,
+            feature_extractor=self.txt2img_pipe.feature_extractor,
+            controlnet=controlnet,
+        ).to("cuda")
+
         print("Loaded pipelines in {:.2f} seconds".format(time.time() - start_time))
 
         self.txt2img_pipe.set_progress_bar_config(disable=True)
@@ -200,6 +214,13 @@ class Predictor(BasePredictor):
                 print("GETTING IMAGES")
                 image = inputs.get("image")
                 pose_image = inputs.get("pose_image")
+                if image is not None and pose_image is not None:
+                    pose_image = load_image(pose_image)
+                    pose_nd_array = np.array(pose_image)
+                    kwargs["controlnet_conditioning_image"] = self.openpose(pose_nd_array)
+                    kwargs["image"] = load_image(image)
+                    kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
+                    pipeline = self.cnet_img2img_pose_pipe
                 if pose_image is not None:
                     print("GETTING POSE")
                     pose_image = load_image(pose_image)

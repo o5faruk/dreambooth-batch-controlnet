@@ -18,4 +18,6 @@ build:
     - ffmpeg
     - libsm6
     - libxext6
+  run:
+    - "pip install compel==1.0.4"
 predict: "predict.py:Predictor"

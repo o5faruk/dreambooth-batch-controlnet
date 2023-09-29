@@ -32,8 +32,7 @@ from diffusers.utils import load_image
 from controlnet_aux import OpenposeDetector
 import numpy as np
 from stable_diffusion_controlnet_img2img import StableDiffusionControlNetImg2ImgPipeline
-
-
+from compel import Compel
 
 SAFETY_MODEL_CACHE = "diffusers-cache"
 SAFETY_MODEL_ID = "CompVis/stable-diffusion-safety-checker"
@@ -218,7 +217,9 @@ class Predictor(BasePredictor):
                     print("USING controlnet_img2img_pose_pipe")
                     pose_image = load_image(pose_image)
                     pose_nd_array = np.array(pose_image)
-                    kwargs["controlnet_conditioning_image"] = self.openpose(pose_nd_array)
+                    kwargs["controlnet_conditioning_image"] = self.openpose(
+                        pose_nd_array
+                    )
                     kwargs["image"] = load_image(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     pipeline = self.cnet_img2img_pose_pipe
@@ -238,9 +239,19 @@ class Predictor(BasePredictor):
                     kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
                     kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
 
+                prompt = inputs.get("prompt")
                 negative_prompt = inputs.get("negative_prompt")
-                if negative_prompt is not None:
-                    kwargs["negative_prompt"] = [negative_prompt] * num_outputs
+                compel_proc = Compel(
+                    tokenizer=pipeline.tokenizer, text_encoder=pipeline.text_encoder
+                )
+                kwargs["prompt_embeds"] = compel_proc(prompt)
+                kwargs["negative_prompt_embeds"] = compel_proc(negative_prompt)
+                # Remove prompt and negative prompt from kwargs
+                kwargs.pop("prompt", None)
+                kwargs.pop("negative_prompt", None)
+
+                # if negative_prompt is not None:
+                #     kwargs["negative_prompt"] = [negative_prompt] * num_outputs
 
                 scheduler = inputs.get("scheduler", DEFAULT_SCHEDULER)
                 pipeline.scheduler = SCHEDULERS[scheduler].from_config(

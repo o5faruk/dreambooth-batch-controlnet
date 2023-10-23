@@ -222,6 +222,8 @@ class Predictor(BasePredictor):
                     )
                     kwargs["image"] = load_image(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
+                    kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
+                    kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
                     pipeline = self.cnet_img2img_pose_pipe
                 elif pose_image is not None:
                     print("GETTING POSE")

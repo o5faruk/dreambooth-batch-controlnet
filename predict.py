@@ -24,13 +24,10 @@ from diffusers import (
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker,
 )
-from PIL import Image
 from transformers import CLIPFeatureExtractor
 import shutil
 import subprocess
 from diffusers.utils import load_image
-from controlnet_aux import OpenposeDetector
-import numpy as np
 from stable_diffusion_controlnet_img2img import StableDiffusionControlNetImg2ImgPipeline
 from compel import Compel
 
@@ -147,12 +144,6 @@ class Predictor(BasePredictor):
             feature_extractor=self.txt2img_pipe.feature_extractor,
         ).to("cuda")
 
-        print("Loading pose...")
-        self.openpose = OpenposeDetector.from_pretrained(
-            "lllyasviel/ControlNet",
-            cache_dir="diffusers-cache",
-        )
-
         print("Loading controlnet...")
         controlnet = ControlNetModel.from_pretrained(
             "lllyasviel/sd-controlnet-openpose",
@@ -215,21 +206,17 @@ class Predictor(BasePredictor):
                 pose_image = inputs.get("pose_image")
                 if image is not None and pose_image is not None:
                     print("USING controlnet_img2img_pose_pipe")
-                    pose_image = load_image(pose_image)
-                    pose_nd_array = np.array(pose_image)
-                    kwargs["controlnet_conditioning_image"] = self.openpose(
-                        pose_nd_array
-                    )
+                    kwargs["controlnet_conditioning_image"] = load_image(pose_image)
                     kwargs["image"] = load_image(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
                     kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
                     pipeline = self.cnet_img2img_pose_pipe
                 elif pose_image is not None:
-                    print("GETTING POSE")
-                    pose_image = load_image(pose_image)
-                    pose_nd_array = np.array(pose_image)
-                    kwargs["image"] = self.openpose(pose_nd_array)
+                    print("USING controlnet_text2img_pose_pipe ")
+                    kwargs["image"] = load_image(pose_image)
+                    kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
+                    kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
                     pipeline = self.cnet_txt2img_pose_pipe
                     print("DONE GETTING POSE")
                 elif image is not None:

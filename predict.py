@@ -146,7 +146,7 @@ class Predictor(BasePredictor):
 
         print("Loading controlnet...")
         controlnet = ControlNetModel.from_pretrained(
-            "lllyasviel/sd-controlnet-openpose",
+            "thibaud/controlnet-sd21-openposev2-diffusers",
             torch_dtype=torch.float16,
             cache_dir="diffusers-cache",
             local_files_only=False,

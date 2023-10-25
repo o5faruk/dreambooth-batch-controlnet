@@ -113,7 +113,7 @@ class Predictor(BasePredictor):
         with zipfile.ZipFile(BytesIO(url.read())) as zf:
             zf.extractall("weights")
 
-    def load_weights(self, url):
+    def load_weights(self, url, model):
         """Load the model into memory to make running multiple predictions efficient"""
         print("Loading Safety pipeline...")
 
@@ -145,8 +145,15 @@ class Predictor(BasePredictor):
         ).to("cuda")
 
         print("Loading controlnet...")
+
+        controlnetModel = (
+            "lllyasviel/sd-controlnet-openpose"
+            if model == "1.5"
+            else "thibaud/controlnet-sd21-openposev2-diffusers"
+        )
+
         controlnet = ControlNetModel.from_pretrained(
-            "thibaud/controlnet-sd21-openposev2-diffusers",
+            controlnetModel,
             torch_dtype=torch.float16,
             cache_dir="diffusers-cache",
             local_files_only=False,
@@ -274,6 +281,7 @@ class Predictor(BasePredictor):
         weights: str = Input(
             description="URL to weights",
         ),
+        model: str = Input(description="Model", default="1.5", choices=["1.5", "2.1"]),
     ) -> List[Path]:
         """Run a single prediction on the model"""
 
@@ -286,7 +294,7 @@ class Predictor(BasePredictor):
 
         if weights is None:
             raise ValueError("No weights provided")
-        self.load_weights(weights)
+        self.load_weights(weights, model)
 
         cog_generated_images = "cog_generated_images"
         if os.path.exists(cog_generated_images):

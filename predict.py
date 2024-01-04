@@ -27,7 +27,7 @@ from diffusers.pipelines.stable_diffusion.safety_checker import (
 from transformers import CLIPFeatureExtractor
 import shutil
 import subprocess
-from diffusers.utils import load_image
+from load_image import load_image_from_url
 from stable_diffusion_controlnet_img2img import StableDiffusionControlNetImg2ImgPipeline
 from compel import Compel
 from cloudflare import upload_to_cloudflare
@@ -215,21 +215,21 @@ class Predictor(BasePredictor):
                 pose_image = inputs.get("pose_image")
                 if image is not None and pose_image is not None:
                     print("USING controlnet_img2img_pose_pipe")
-                    kwargs["controlnet_conditioning_image"] = load_image(pose_image)
-                    kwargs["image"] = load_image(image)
+                    kwargs["controlnet_conditioning_image"] = load_image_from_url(pose_image)
+                    kwargs["image"] = load_image_from_url(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
                     kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
                     pipeline = self.cnet_img2img_pose_pipe
                 elif pose_image is not None:
                     print("USING controlnet_text2img_pose_pipe ")
-                    kwargs["image"] = load_image(pose_image)
+                    kwargs["image"] = load_image_from_url(pose_image)
                     kwargs["width"] = int(inputs.get("width", DEFAULT_WIDTH))
                     kwargs["height"] = int(inputs.get("height", DEFAULT_HEIGHT))
                     pipeline = self.cnet_txt2img_pose_pipe
                     print("DONE GETTING POSE")
                 elif image is not None:
-                    kwargs["image"] = load_image(image)
+                    kwargs["image"] = load_image_from_url(image)
                     kwargs["strength"] = float(inputs.get("strength", DEFAULT_STRENGTH))
                     pipeline = self.img2img_pipe
                 else:

@@ -30,6 +30,8 @@ import subprocess
 from diffusers.utils import load_image
 from stable_diffusion_controlnet_img2img import StableDiffusionControlNetImg2ImgPipeline
 from compel import Compel
+from cloudflare import upload_to_cloudflare
+from uuid import uuid4
 
 SAFETY_MODEL_CACHE = "diffusers-cache"
 SAFETY_MODEL_ID = "CompVis/stable-diffusion-safety-checker"
@@ -282,7 +284,9 @@ class Predictor(BasePredictor):
             description="URL to weights",
         ),
         model: str = Input(description="Model", default="1.5", choices=["1.5", "2.1"]),
-    ) -> List[Path]:
+        cf_api_key: str = Input(description="Cloudflare API Key", default=""),
+        cf_account_id: str = Input(description="Cloudflare Account ID", default=""),
+    ) -> List[str]:
         """Run a single prediction on the model"""
 
         weights = weights.replace(
@@ -309,4 +313,27 @@ class Predictor(BasePredictor):
         for file_path in directory.rglob("*"):
             print(file_path)
             results.append(file_path)
+
+        image_urls = []
+
+        # Upload all images to Cloudflare
+        if cf_api_key and cf_account_id:
+            print("Uploading images to Cloudflare...")
+            for file_path in results:
+                print(file_path)
+                # Generate image id as uuid
+                image_id = uuid4()
+
+                image_cf_url = upload_to_cloudflare(
+                    image_id,
+                    file_path,
+                    cf_account_id,
+                    cf_api_key,
+                )
+
+                image_urls.append(image_cf_url)
+
+            # Return image urls
+            return image_urls
+
         return results

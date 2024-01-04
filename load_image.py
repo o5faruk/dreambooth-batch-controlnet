@@ -3,6 +3,8 @@ from PIL import Image
 import os
 import logging
 import time
+import PIL.Image
+import PIL.ImageOps
 
 # Setting up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -31,6 +33,8 @@ def load_image_from_url(url, max_retries=3, delay=0.2):
             logger.debug("Image successfully downloaded")
             image = Image.open(temp_filename)
             os.remove(temp_filename)  # Clean up the temporary file
+            image = PIL.ImageOps.exif_transpose(image)
+            image = image.convert("RGB")
             return image
         except subprocess.CalledProcessError as e:
             logger.error(f"Attempt {attempt+1} failed to download image: {e}")

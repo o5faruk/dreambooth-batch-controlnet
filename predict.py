@@ -321,8 +321,8 @@ class Predictor(BasePredictor):
             print("Uploading images to Cloudflare...")
             for file_path in results:
                 print(file_path)
-                # Generate image id as uuid
-                image_id = uuid4()
+                # Generate image id as uuid string
+                image_id = str(uuid4())
 
                 image_cf_url = upload_to_cloudflare(
                     image_id,

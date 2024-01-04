@@ -13,6 +13,7 @@ build:
     - "timm==0.6.12"
     - "controlnet-aux==0.0.6"
     - "matplotlib"
+    - "requests-toolbelt"
   system_packages:
     - "unzip"
     - ffmpeg

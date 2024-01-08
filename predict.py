@@ -74,6 +74,9 @@ SCHEDULERS = {
     "DPM++SDEKarras": DPMPPSDEKarras,
 }
 
+EMBEDDINGS = [(x.split(".")[0], "/embeddings/"+x) for x in os.listdir("/embeddings/")]
+EMBEDDING_TOKENS = [x[0] for x in EMBEDDINGS]
+EMBEDDING_PATHS = [x[1] for x in EMBEDDINGS]
 
 class Predictor(BasePredictor):
     def setup(self):
@@ -133,7 +136,10 @@ class Predictor(BasePredictor):
             safety_checker=self.safety_checker,
             feature_extractor=self.feature_extractor,
             torch_dtype=torch.float16,
-        ).to("cuda")
+        )
+        self.txt2img_pipe.load_textual_inversion(EMBEDDING_PATHS, token=EMBEDDING_TOKENS, local_files_only=True)
+        self.txt2img_pipe.to("cuda")
+
 
         print("Loading SD img2img pipeline...")
         self.img2img_pipe = StableDiffusionImg2ImgPipeline(
@@ -239,11 +245,18 @@ class Predictor(BasePredictor):
 
                 prompt = inputs.get("prompt")
                 negative_prompt = inputs.get("negative_prompt")
-                compel_proc = Compel(
-                    tokenizer=pipeline.tokenizer, text_encoder=pipeline.text_encoder
+                compel = Compel(
+                    tokenizer=pipeline.tokenizer, text_encoder=pipeline.text_encoder,
+                    truncate_long_prompts=False
                 )
-                kwargs["prompt_embeds"] = compel_proc(prompt)
-                kwargs["negative_prompt_embeds"] = compel_proc(negative_prompt)
+
+                conditioning = compel.build_conditioning_tensor(prompt)
+                prompt_embeds = "" # it's necessary to create an empty prompt - it can also be very long, if you want
+                negative_conditioning = compel.build_conditioning_tensor(negative_prompt)
+                [conditioning, negative_conditioning] = compel.pad_conditioning_tensors_to_same_length([conditioning, negative_conditioning])
+
+                kwargs["prompt_embeds"] = conditioning
+                kwargs["negative_prompt_embeds"] = negative_conditioning
                 # Remove prompt and negative prompt from kwargs
                 kwargs.pop("prompt", None)
                 kwargs.pop("negative_prompt", None)

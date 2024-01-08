@@ -20,5 +20,7 @@ build:
     - libsm6
     - libxext6
   run:
+    - set -eux; mkdir /embeddings/ && cd /embeddings/ && wget -O FastNegativeV2.pt "https://civitai.com/api/download/models/94057?type=Model&format=PickleTensor" && wget -O BadDream.pt "https://civitai.com/api/download/models/77169?type=Model&format=PickleTensor" && wget -O UnrealisticDream.pt "https://civitai.com/api/download/models/77173?type=Model&format=PickleTensor" && wget -O EasyNegative.pt "https://civitai.com/api/download/models/9536?type=Model&format=PickleTensor&size=full&fp=fp16" && wget -O ng_deepnegative_v1_75t.pt "https://civitai.com/api/download/models/5637?type=Model&format=PickleTensor&size=full&fp=fp16" && wget -O negative_hand-neg.pt "https://civitai.com/api/download/models/60938?type=Negative&format=Other" && wget -O realisticvision-negative-embedding.pt "https://civitai.com/api/download/models/42247?type=Model&format=Other" && wget -O badhandv4.pt "https://civitai.com/api/download/models/20068?type=Model&format=PickleTensor&size=full&fp=fp16" && wget -O CyberRealistic_Negative-neg.pt "https://civitai.com/api/download/models/82745?type=Negative&format=Other" && wget -O SkinPerfection_NegV15.pt "https://civitai.com/api/download/models/124580?type=Model&format=PickleTensor"
     - "pip install compel==1.0.4"
 predict: "predict.py:Predictor"
+image: "r8.im/prompthunt/dreambooth-batch-controlnet"

@@ -346,7 +346,7 @@ class Predictor(BasePredictor):
 
                 image_urls.append(image_cf_url)
 
-            # Return image urls
+            # Return image urls if Cloudflare API key and account ID are provided
             return image_urls
 
         return results
